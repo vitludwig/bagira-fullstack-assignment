@@ -2,19 +2,24 @@
   ><mat-card-content
     ><form [formGroup]="form" (ngSubmit)="submit()">
       @if (serverError()) {
-        <mat-error>{{ serverError() }}</mat-error>
+        <mat-error>{{ serverError()?.message }}</mat-error>
       }
       <mat-form-field
         ><mat-label>Scenario name</mat-label
         ><input matInput formControlName="name" maxlength="200" />
         @if (form.controls.name.hasError('required')) {
           <mat-error>Name is required.</mat-error>
+        } @else if (form.controls.name.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
         }
         <mat-hint align="end">{{ form.controls.name.value.length }}/200</mat-hint></mat-form-field
       >
       <mat-form-field
         ><mat-label>Description</mat-label
-        ><textarea matInput formControlName="description" maxlength="1000" rows="6"></textarea
+        ><textarea matInput formControlName="description" maxlength="1000" rows="6"></textarea>
+        @if (form.controls.description.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
+        }
         ><mat-hint align="end"
           >{{ form.controls.description.value.length }}/1000</mat-hint
         ></mat-form-field

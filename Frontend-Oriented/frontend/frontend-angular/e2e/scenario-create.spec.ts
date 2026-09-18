@@ -36,6 +36,11 @@ test('validates and creates a scenario', async ({ page }) => {
   await page.getByRole('button', { name: 'Create scenario' }).click();
   await expect(page.getByText('Name is required.')).toBeVisible();
 
+  await page.getByLabel('Scenario name').fill('   ');
+  await page.getByRole('button', { name: 'Create scenario' }).click();
+  await expect(page.getByText('Name is required.')).toBeVisible();
+  expect(requestBody).toBeUndefined();
+
   await page.getByLabel('Scenario name').fill('  Rescue Exercise  ');
   await page.getByLabel('Description').fill('Mountain response training');
   await page.getByRole('button', { name: 'Create scenario' }).click();
@@ -46,4 +51,22 @@ test('validates and creates a scenario', async ({ page }) => {
     name: 'Rescue Exercise',
     description: 'Mountain response training',
   });
+});
+
+test('displays server validation messages', async ({ page }) => {
+  await page.route('http://localhost:5000/api/scenarios', async (route) => {
+    await route.fulfill({
+      status: 400,
+      json: {
+        message: 'Validation failed.',
+        errors: { Name: ['The scenario name is not available.'] },
+      },
+    });
+  });
+
+  await page.goto('/scenarios/create');
+  await page.getByLabel('Scenario name').fill('Existing scenario');
+  await page.getByRole('button', { name: 'Create scenario' }).click();
+
+  await expect(page.getByText('The scenario name is not available.')).toBeVisible();
 });

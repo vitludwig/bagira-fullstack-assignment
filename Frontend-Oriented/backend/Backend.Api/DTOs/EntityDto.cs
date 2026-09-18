@@ -5,7 +5,6 @@ namespace Backend.Api.DTOs;
 /// <summary>
 /// DTO for entity
 /// </summary>
-/// TODO(candidate): Add validation attributes as needed
 public class EntityDto
 {
     public Guid Id { get; set; }

@@ -2,7 +2,7 @@
   ><mat-card-content
     ><form [formGroup]="form" (ngSubmit)="submit()">
       @if (serverError()) {
-        <mat-error>{{ serverError() }}</mat-error>
+        <mat-error>{{ serverError()?.message }}</mat-error>
       }
       <mat-form-field
         ><mat-label>Entity type</mat-label
@@ -13,6 +13,8 @@
         </mat-select>
         @if (form.controls.type.hasError('required')) {
           <mat-error>Entity type is required.</mat-error>
+        } @else if (form.controls.type.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
       <mat-form-field
@@ -24,6 +26,8 @@
         </mat-select>
         @if (form.controls.taskForce.hasError('required')) {
           <mat-error>Task force is required.</mat-error>
+        } @else if (form.controls.taskForce.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
       <mat-form-field
@@ -31,19 +35,33 @@
         ><input matInput formControlName="name" maxlength="200" />
         @if (form.controls.name.hasError('required')) {
           <mat-error>Name is required.</mat-error>
+        } @else if (form.controls.name.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
       <mat-form-field
         ><mat-label>Latitude</mat-label><input matInput type="number" formControlName="latitude" />
-        @if (form.controls.latitude.invalid) {
+        @if (form.controls.latitude.hasError('required')) {
+          <mat-error>Latitude is required.</mat-error>
+        } @else if (
+          form.controls.latitude.hasError('min') || form.controls.latitude.hasError('max')
+        ) {
           <mat-error>Latitude must be between -90 and 90.</mat-error>
+        } @else if (form.controls.latitude.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
       <mat-form-field
         ><mat-label>Longitude</mat-label
         ><input matInput type="number" formControlName="longitude" />
-        @if (form.controls.longitude.invalid) {
+        @if (form.controls.longitude.hasError('required')) {
+          <mat-error>Longitude is required.</mat-error>
+        } @else if (
+          form.controls.longitude.hasError('min') || form.controls.longitude.hasError('max')
+        ) {
           <mat-error>Longitude must be between -180 and 180.</mat-error>
+        } @else if (form.controls.longitude.getError('server'); as message) {
+          <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
       <mat-card-actions align="end"

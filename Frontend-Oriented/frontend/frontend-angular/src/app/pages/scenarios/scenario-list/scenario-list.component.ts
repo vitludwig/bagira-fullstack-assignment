@@ -3,7 +3,15 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, finalize, Subject } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  EMPTY,
+  finalize,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import { IApiError } from '../../../common/types/IApiError';
 import { EmptyStateComponent } from '../../../common/components/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../../common/components/error-state/error-state.component';
@@ -45,6 +53,7 @@ const SORT_QUERIES: Record<
 export class ScenarioListComponent {
   private readonly service = inject(ScenarioListService);
   private readonly searchChanges = new Subject<string>();
+  private readonly loadRequests = new Subject<boolean>();
   readonly scenarios = signal<IScenarioListItem[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -55,6 +64,29 @@ export class ScenarioListComponent {
   readonly totalCount = signal(0);
 
   constructor() {
+    this.loadRequests
+      .pipe(
+        switchMap((showLoading) => {
+          if (showLoading) {
+            this.loading.set(true);
+          }
+          this.error.set(null);
+
+          return this.service.getAll(this.createQuery()).pipe(
+            catchError((error: IApiError) => {
+              this.error.set(error.message);
+              return EMPTY;
+            }),
+            finalize(() => showLoading && this.loading.set(false)),
+          );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe((response) => {
+        this.scenarios.set(response.items);
+        this.totalCount.set(response.totalCount);
+      });
+
     this.searchChanges
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
       .subscribe(() => {
@@ -65,20 +97,7 @@ export class ScenarioListComponent {
   }
 
   load(showLoading = true): void {
-    if (showLoading) {
-      this.loading.set(true);
-    }
-    this.error.set(null);
-    this.service
-      .getAll(this.createQuery())
-      .pipe(finalize(() => showLoading && this.loading.set(false)))
-      .subscribe({
-        next: (response) => {
-          this.scenarios.set(response.items);
-          this.totalCount.set(response.totalCount);
-        },
-        error: (error: IApiError) => this.error.set(error.message),
-      });
+    this.loadRequests.next(showLoading);
   }
 
   search(value: string): void {

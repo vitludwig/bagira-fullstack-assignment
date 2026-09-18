@@ -17,6 +17,10 @@ RUN dotnet publish Backend.Api/Backend.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 

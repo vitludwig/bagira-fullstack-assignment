@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -8,6 +8,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { EEntityType } from '../../../../../common/types/EEntityType';
 import { ETaskForce } from '../../../../../common/types/ETaskForce';
 import { ICreateEntityRequest } from '../../types/ICreateEntityRequest';
+import { IApiError } from '../../../../../common/types/IApiError';
+import { requiredTrimmedValidator } from '../../../../../common/validators/required-trimmed.validator';
+import { applyServerValidationErrors } from '../../../../../common/validators/apply-server-validation-errors';
 
 @Component({
   selector: 'app-entity-form',
@@ -25,7 +28,7 @@ import { ICreateEntityRequest } from '../../types/ICreateEntityRequest';
 })
 export class EntityFormComponent {
   readonly submitting = input(false);
-  readonly serverError = input<string | null>(null);
+  readonly serverError = input<IApiError | null>(null);
   readonly submitted = output<ICreateEntityRequest>();
   readonly cancelled = output<void>();
   readonly entityTypes = Object.values(EEntityType);
@@ -35,7 +38,7 @@ export class EntityFormComponent {
     taskForce: new FormControl<ETaskForce | null>(null, [Validators.required]),
     name: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)],
+      validators: [requiredTrimmedValidator, Validators.maxLength(200)],
     }),
     latitude: new FormControl<number | null>(null, [
       Validators.required,
@@ -48,6 +51,10 @@ export class EntityFormComponent {
       Validators.max(180),
     ]),
   });
+
+  constructor() {
+    effect(() => applyServerValidationErrors(this.form, this.serverError()));
+  }
 
   submit(): void {
     const value = this.form.getRawValue();

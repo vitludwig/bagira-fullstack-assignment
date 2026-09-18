@@ -23,7 +23,7 @@ export class EntityCreateComponent {
   protected readonly router = inject(Router);
   readonly scenarioId = this.route.snapshot.paramMap.get('scenarioId') ?? '';
   readonly submitting = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly error = signal<IApiError | null>(null);
 
   create(value: ICreateEntityRequest): void {
     this.submitting.set(true);
@@ -38,7 +38,7 @@ export class EntityCreateComponent {
           void this.router.navigate(['/scenarios', this.scenarioId]);
         },
         error: (error: IApiError) => {
-          this.error.set(error.message);
+          this.error.set(error);
           this.notification.error('Entity could not be created.');
         },
       });

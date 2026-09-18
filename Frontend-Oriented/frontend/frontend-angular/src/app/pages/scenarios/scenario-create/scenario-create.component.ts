@@ -21,7 +21,7 @@ export class ScenarioCreateComponent {
   private readonly notification = inject(NotificationService);
   protected readonly router = inject(Router);
   readonly submitting = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly error = signal<IApiError | null>(null);
 
   create(value: IScenarioFormValue): void {
     this.submitting.set(true);
@@ -35,7 +35,7 @@ export class ScenarioCreateComponent {
           void this.router.navigate(['/scenarios', scenario.id]);
         },
         error: (error: IApiError) => {
-          this.error.set(error.message);
+          this.error.set(error);
           this.notification.error('Scenario could not be created.');
         },
       });

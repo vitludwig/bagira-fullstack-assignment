@@ -76,9 +76,14 @@ test('validates and creates an entity', async ({ page }) => {
   await page.getByRole('option', { name: 'Soldier' }).click();
   await page.getByLabel('Task force').click();
   await page.getByRole('option', { name: 'Friendly' }).click();
-  await page.getByLabel('Name / callsign').fill('  Falcon 3  ');
+  await page.getByLabel('Name / callsign').fill('   ');
   await page.getByLabel('Latitude').fill('50.0755');
   await page.getByLabel('Longitude').fill('14.4378');
+  await page.getByRole('button', { name: 'Create entity' }).click();
+  await expect(page.getByText('Name is required.')).toBeVisible();
+  expect(requestBody).toBeUndefined();
+
+  await page.getByLabel('Name / callsign').fill('  Falcon 3  ');
   await page.getByRole('button', { name: 'Create entity' }).click();
 
   await expect(page).toHaveURL(/\/scenarios\/scenario-1$/);

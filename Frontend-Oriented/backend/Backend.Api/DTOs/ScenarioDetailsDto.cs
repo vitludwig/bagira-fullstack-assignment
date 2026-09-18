@@ -3,7 +3,6 @@ namespace Backend.Api.DTOs;
 /// <summary>
 /// DTO for scenario details
 /// </summary>
-/// TODO(candidate): Add validation attributes as needed
 public class ScenarioDetailsDto
 {
     public Guid Id { get; set; }

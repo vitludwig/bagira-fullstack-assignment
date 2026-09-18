@@ -4,7 +4,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, finalize, forkJoin, Subject } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  EMPTY,
+  finalize,
+  forkJoin,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import { EmptyStateComponent } from '../../../common/components/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../../common/components/error-state/error-state.component';
 import { LoadingStateComponent } from '../../../common/components/loading-state/loading-state.component';
@@ -56,6 +65,7 @@ export class ScenarioDetailsComponent {
   private readonly service = inject(ScenarioDetailsService);
   private readonly entityListService = inject(EntityListService);
   private readonly searchChanges = new Subject<string>();
+  private readonly entityLoadRequests = new Subject<boolean>();
 
   readonly scenarioId = this.route.snapshot.paramMap.get('scenarioId') ?? '';
   readonly scenario = signal<IScenarioDetails | null>(null);
@@ -73,6 +83,31 @@ export class ScenarioDetailsComponent {
   readonly viewModes = EEntityViewMode;
 
   constructor() {
+    this.entityLoadRequests
+      .pipe(
+        switchMap((showLoading) => {
+          if (showLoading) {
+            this.loading.set(true);
+          }
+          this.error.set(null);
+
+          return this.entityListService
+            .getByScenario(this.scenarioId, this.createEntityQuery())
+            .pipe(
+              catchError((error: IApiError) => {
+                this.error.set(error.message);
+                return EMPTY;
+              }),
+              finalize(() => showLoading && this.loading.set(false)),
+            );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe((response) => {
+        this.entities.set(response.items);
+        this.totalCount.set(response.totalCount);
+      });
+
     this.searchChanges
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
       .subscribe(() => this.reloadEntities());
@@ -130,20 +165,7 @@ export class ScenarioDetailsComponent {
   }
 
   private loadEntities(showLoading = true): void {
-    if (showLoading) {
-      this.loading.set(true);
-    }
-    this.error.set(null);
-    this.entityListService
-      .getByScenario(this.scenarioId, this.createEntityQuery())
-      .pipe(finalize(() => showLoading && this.loading.set(false)))
-      .subscribe({
-        next: (response) => {
-          this.entities.set(response.items);
-          this.totalCount.set(response.totalCount);
-        },
-        error: (error: IApiError) => this.error.set(error.message),
-      });
+    this.entityLoadRequests.next(showLoading);
   }
 
   private createEntityQuery(): IEntityListQuery {

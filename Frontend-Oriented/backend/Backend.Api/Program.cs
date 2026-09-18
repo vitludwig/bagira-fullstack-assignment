@@ -39,6 +39,7 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
 
 var mappingConfig = TypeAdapterConfig.GlobalSettings;
 mappingConfig.Scan(typeof(ScenarioMappingConfig).Assembly);
@@ -136,6 +137,7 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
