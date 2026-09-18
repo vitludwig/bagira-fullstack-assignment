@@ -10,3 +10,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+Frontend-Oriented/.env
+!Frontend-Oriented/.env.example
