@@ -21,21 +21,31 @@ public class ScenariosController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<ScenarioListItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResponse<ScenarioListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IEnumerable<ScenarioListItemDto>>> GetScenarios(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResponse<ScenarioListItemDto>>> GetScenarios(
+        [FromQuery] ScenarioListQuery query,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var scenarios = await _scenarioService.GetAllAsync(cancellationToken);
-            var response = scenarios.Select(summary =>
+            var scenarios = await _scenarioService.GetAllAsync(
+                query.Page, query.PageSize, query.Search, query.SortBy, query.SortDirection,
+                cancellationToken);
+            var items = scenarios.Items.Select(summary =>
             {
                 var dto = _mapper.Map<ScenarioListItemDto>(summary.Scenario);
                 dto.EntityCount = summary.EntityCount;
                 return dto;
             }).ToList();
 
-            return Ok(response);
+            return Ok(new PagedResponse<ScenarioListItemDto>
+            {
+                Items = items,
+                Page = query.Page,
+                PageSize = query.PageSize,
+                TotalCount = scenarios.TotalCount
+            });
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

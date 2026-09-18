@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { finalize } from 'rxjs';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, finalize, Subject } from 'rxjs';
 import { IApiError } from '../../../common/types/IApiError';
 import { EmptyStateComponent } from '../../../common/components/empty-state/empty-state.component';
 import { ErrorStateComponent } from '../../../common/components/error-state/error-state.component';
@@ -10,6 +12,18 @@ import { ScenarioFiltersComponent } from './components/scenario-filters/scenario
 import { ScenarioTableComponent } from './components/scenario-table/scenario-table.component';
 import { ScenarioListService } from './services/scenario-list.service';
 import { IScenarioListItem } from './types/IScenarioListItem';
+import { IScenarioListQuery } from './types/IScenarioListQuery';
+import { EScenarioSortOption } from './types/EScenarioSortOption';
+
+const SORT_QUERIES: Record<
+  EScenarioSortOption,
+  Pick<IScenarioListQuery, 'sortBy' | 'sortDirection'>
+> = {
+  [EScenarioSortOption.RecentlyUpdated]: { sortBy: 'updatedAt', sortDirection: 'desc' },
+  [EScenarioSortOption.NameAscending]: { sortBy: 'name', sortDirection: 'asc' },
+  [EScenarioSortOption.NameDescending]: { sortBy: 'name', sortDirection: 'desc' },
+  [EScenarioSortOption.MostEntities]: { sortBy: 'entityCount', sortDirection: 'desc' },
+};
 
 @Component({
   selector: 'app-scenario-list',
@@ -17,6 +31,7 @@ import { IScenarioListItem } from './types/IScenarioListItem';
   imports: [
     RouterLink,
     MatButtonModule,
+    MatPaginatorModule,
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingStateComponent,
@@ -29,46 +44,66 @@ import { IScenarioListItem } from './types/IScenarioListItem';
 })
 export class ScenarioListComponent {
   private readonly service = inject(ScenarioListService);
+  private readonly searchChanges = new Subject<string>();
   readonly scenarios = signal<IScenarioListItem[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly query = signal('');
-  readonly sort = signal('updated-desc');
-  readonly visibleScenarios = computed(() => {
-    const query = this.query().trim().toLowerCase();
-    const result = this.scenarios().filter(
-      (item) =>
-        !query ||
-        item.name.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query),
-    );
-    return [...result].sort((a, b) => {
-      switch (this.sort()) {
-        case 'name-asc':
-          return a.name.localeCompare(b.name);
-        case 'name-desc':
-          return b.name.localeCompare(a.name);
-        case 'entities-desc':
-          return (b.entityCount ?? 0) - (a.entityCount ?? 0);
-        default:
-          return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
-      }
-    });
-  });
+  readonly sort = signal(EScenarioSortOption.RecentlyUpdated);
+  readonly page = signal(1);
+  readonly pageSize = signal(20);
+  readonly totalCount = signal(0);
 
   constructor() {
+    this.searchChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe(() => {
+        this.page.set(1);
+        this.load(false);
+      });
     this.load();
   }
 
-  load(): void {
-    this.loading.set(true);
+  load(showLoading = true): void {
+    if (showLoading) {
+      this.loading.set(true);
+    }
     this.error.set(null);
     this.service
-      .getAll()
-      .pipe(finalize(() => this.loading.set(false)))
+      .getAll(this.createQuery())
+      .pipe(finalize(() => showLoading && this.loading.set(false)))
       .subscribe({
-        next: (scenarios) => this.scenarios.set(scenarios),
+        next: (response) => {
+          this.scenarios.set(response.items);
+          this.totalCount.set(response.totalCount);
+        },
         error: (error: IApiError) => this.error.set(error.message),
       });
+  }
+
+  search(value: string): void {
+    this.query.set(value);
+    this.searchChanges.next(value);
+  }
+
+  changeSort(value: EScenarioSortOption): void {
+    this.sort.set(value);
+    this.page.set(1);
+    this.load(false);
+  }
+
+  changePage(event: PageEvent): void {
+    this.page.set(event.pageIndex + 1);
+    this.pageSize.set(event.pageSize);
+    this.load(false);
+  }
+
+  private createQuery(): IScenarioListQuery {
+    return {
+      page: this.page(),
+      pageSize: this.pageSize(),
+      search: this.query(),
+      ...SORT_QUERIES[this.sort()],
+    };
   }
 }

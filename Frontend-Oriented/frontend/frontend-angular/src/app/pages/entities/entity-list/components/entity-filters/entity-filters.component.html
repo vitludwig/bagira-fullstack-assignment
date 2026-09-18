@@ -27,9 +27,9 @@
 <mat-form-field
   ><mat-label>Sort entities</mat-label
   ><mat-select [value]="sort()" (selectionChange)="sortChange.emit($event.value)"
-    ><mat-option value="name-asc">Name A–Z</mat-option
-    ><mat-option value="name-desc">Name Z–A</mat-option
-    ><mat-option value="type-asc">Type</mat-option
-    ><mat-option value="force-asc">Task force</mat-option></mat-select
+    ><mat-option [value]="sortOptions.NameAscending">Name A–Z</mat-option
+    ><mat-option [value]="sortOptions.NameDescending">Name Z–A</mat-option
+    ><mat-option [value]="sortOptions.Type">Type</mat-option
+    ><mat-option [value]="sortOptions.TaskForce">Task force</mat-option></mat-select
   ></mat-form-field
 >

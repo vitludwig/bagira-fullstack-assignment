@@ -10,7 +10,7 @@
   <app-loading-state />
 } @else if (error()) {
   <app-error-state [message]="error()!" (retry)="load()" />
-} @else if (scenarios().length === 0) {
+} @else if (totalCount() === 0 && !query()) {
   <app-empty-state
     title="No scenarios yet"
     message="Create your first training scenario to get started."
@@ -21,12 +21,19 @@
   <app-scenario-filters
     [query]="query()"
     [sort]="sort()"
-    (queryChange)="query.set($event)"
-    (sortChange)="sort.set($event)"
+    (queryChange)="search($event)"
+    (sortChange)="changeSort($event)"
   />
-  @if (visibleScenarios().length === 0) {
+  @if (scenarios().length === 0) {
     <app-empty-state title="No matching scenarios" message="Try a different search term." />
   } @else {
-    <app-scenario-table [scenarios]="visibleScenarios()" />
+    <app-scenario-table [scenarios]="scenarios()" />
+    <mat-paginator
+      [length]="totalCount()"
+      [pageIndex]="page() - 1"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[10, 20, 50, 100]"
+      (page)="changePage($event)"
+    />
   }
 }

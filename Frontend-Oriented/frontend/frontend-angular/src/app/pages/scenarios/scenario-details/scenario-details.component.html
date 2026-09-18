@@ -7,10 +7,10 @@
   <section class="entities-heading">
     <div>
       <h2 class="mat-headline-medium">Entities</h2>
-      <p>{{ entities().length }} total</p>
+      <p>{{ totalCount() }} total</p>
     </div>
   </section>
-  @if (entities().length === 0) {
+  @if (totalCount() === 0 && !query() && !type() && !taskForce()) {
     <app-empty-state title="No entities yet" message="Add the first entity to this scenario.">
       <a matButton="filled" [routerLink]="['/scenarios', scenarioId, 'entities', 'create']"
         >Create entity</a
@@ -22,15 +22,22 @@
       [type]="type()"
       [taskForce]="taskForce()"
       [sort]="sort()"
-      (queryChange)="query.set($event)"
-      (typeChange)="type.set($event)"
-      (taskForceChange)="taskForce.set($event)"
-      (sortChange)="sort.set($event)"
+      (queryChange)="search($event)"
+      (typeChange)="changeType($event)"
+      (taskForceChange)="changeTaskForce($event)"
+      (sortChange)="changeSort($event)"
     />
-    @if (visibleEntities().length === 0) {
+    @if (entities().length === 0) {
       <app-empty-state title="No matching entities" message="Try changing the active filters." />
     } @else {
-      <app-entity-table [entities]="visibleEntities()" />
+      <app-entity-table [entities]="entities()" />
+      <mat-paginator
+        [length]="totalCount()"
+        [pageIndex]="page() - 1"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        (page)="changePage($event)"
+      />
     }
   }
 }

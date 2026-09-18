@@ -1,24 +1,51 @@
 using System.Collections.Concurrent;
 using Backend.Domain.Models;
 using Backend.Infrastructure.Interfaces;
+using Backend.Infrastructure.Models;
+using Gridify;
 
 namespace Backend.Infrastructure.Repositories;
 
 public class EntityRepository : IEntityRepository
 {
+    private static readonly IGridifyMapper<Entity> GridMapper = new GridifyMapper<Entity>()
+        .AddMap("name", entity => entity.Name)
+        .AddMap("type", entity => entity.Type)
+        .AddMap("taskForce", entity => entity.TaskForce)
+        .AddMap("latitude", entity => entity.Latitude)
+        .AddMap("longitude", entity => entity.Longitude)
+        .AddMap("updatedAt", entity => entity.UpdatedAt);
     internal static readonly ConcurrentDictionary<Guid, Entity> Store = new();
+
+    public Task<PagedResult<Entity>> GetByScenarioIdAsync(
+        Guid scenarioId,
+        GridRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = Store.Values
+            .Where(entity => entity.ScenarioId == scenarioId)
+            .AsQueryable()
+            .Gridify(new GridifyQuery
+            {
+                Page = request.Page,
+                PageSize = request.PageSize,
+                Filter = request.Filter,
+                OrderBy = request.OrderBy
+            }, GridMapper);
+
+        return Task.FromResult(new PagedResult<Entity>
+        {
+            Items = result.Data.ToList(),
+            TotalCount = result.Count
+        });
+    }
 
     public Task<Entity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         Store.TryGetValue(id, out var entity);
         return Task.FromResult(entity);
-    }
-
-    public Task<IReadOnlyCollection<Entity>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult<IReadOnlyCollection<Entity>>(Store.Values.ToList());
     }
 
     public Task<Entity> AddAsync(Entity entity, CancellationToken cancellationToken)
@@ -58,28 +85,4 @@ public class EntityRepository : IEntityRepository
         }
     }
 
-    public Task<IReadOnlyCollection<Entity>> GetByScenarioIdAsync(
-        Guid scenarioId,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var entities = Store.Values
-            .Where(e => e.ScenarioId == scenarioId)
-            .ToList();
-        return Task.FromResult<IReadOnlyCollection<Entity>>(entities);
-    }
-
-    public Task<IReadOnlyDictionary<Guid, int>> GetCountsByScenarioIdsAsync(
-        IEnumerable<Guid> scenarioIds,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var scenarioIdSet = scenarioIds.ToHashSet();
-        var counts = Store.Values
-            .Where(entity => scenarioIdSet.Contains(entity.ScenarioId))
-            .GroupBy(entity => entity.ScenarioId)
-            .ToDictionary(group => group.Key, group => group.Count());
-
-        return Task.FromResult<IReadOnlyDictionary<Guid, int>>(counts);
-    }
 }
