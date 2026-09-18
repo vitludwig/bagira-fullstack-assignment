@@ -1,26 +1,30 @@
 using System.Collections.Concurrent;
-using Backend.Infrastructure.Interfaces;
 using Backend.Domain.Models;
+using Backend.Infrastructure.Interfaces;
 
 namespace Backend.Infrastructure.Repositories;
 
 public class ScenarioRepository : IScenarioRepository
 {
+    internal static readonly object StoreLock = new();
     internal static readonly ConcurrentDictionary<Guid, Scenario> Store = new();
 
-    public Task<Scenario?> GetByIdAsync(Guid id)
+    public Task<Scenario?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         Store.TryGetValue(id, out var scenario);
         return Task.FromResult(scenario);
     }
 
-    public Task<IEnumerable<Scenario>> GetAllAsync()
+    public Task<IReadOnlyCollection<Scenario>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult<IEnumerable<Scenario>>(Store.Values.ToList());
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyCollection<Scenario>>(Store.Values.ToList());
     }
 
-    public Task<Scenario> AddAsync(Scenario scenario)
+    public Task<Scenario> AddAsync(Scenario scenario, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (scenario.Id == Guid.Empty)
             scenario.Id = Guid.NewGuid();
 
@@ -30,11 +34,5 @@ public class ScenarioRepository : IScenarioRepository
 
         Store[scenario.Id] = scenario;
         return Task.FromResult(scenario);
-    }
-
-    public Task<int> GetEntityCountAsync(Guid scenarioId)
-    {
-        var count = EntityRepository.Store.Values.Count(e => e.ScenarioId == scenarioId);
-        return Task.FromResult(count);
     }
 }

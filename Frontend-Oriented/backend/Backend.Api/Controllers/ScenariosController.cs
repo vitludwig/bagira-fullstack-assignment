@@ -1,61 +1,114 @@
 using Backend.Api.DTOs;
-using Backend.Infrastructure.Interfaces;
+using Backend.Api.Services.Interfaces;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Api.Controllers;
 
-/// <summary>
-/// Controller for managing scenarios
-/// </summary>
-/// /// TODO(candidate): Implement proper error handling, validation and return codes.
-/// TODO(candidate): Implement all endpoints
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/scenarios")]
 public class ScenariosController : ControllerBase
 {
-    private readonly IScenarioRepository _scenarioRepository;
-    private readonly IEntityRepository _entityRepository;
+    private readonly IScenarioService _scenarioService;
+    private readonly IMapper _mapper;
     private readonly ILogger<ScenariosController> _logger;
 
-    public ScenariosController(
-        IScenarioRepository scenarioRepository,
-        IEntityRepository entityRepository,
-        ILogger<ScenariosController> logger)
+    public ScenariosController(IScenarioService scenarioService, IMapper mapper, ILogger<ScenariosController> logger)
     {
-        _scenarioRepository = scenarioRepository;
-        _entityRepository = entityRepository;
+        _scenarioService = scenarioService;
+        _mapper = mapper;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Get all scenarios
-    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ScenarioListItemDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<ScenarioListItemDto>>> GetScenarios()
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IEnumerable<ScenarioListItemDto>>> GetScenarios(CancellationToken cancellationToken)
     {
-        return null;
+        try
+        {
+            var scenarios = await _scenarioService.GetAllAsync(cancellationToken);
+            var response = scenarios.Select(summary =>
+            {
+                var dto = _mapper.Map<ScenarioListItemDto>(summary.Scenario);
+                dto.EntityCount = summary.EntityCount;
+                return dto;
+            }).ToList();
+
+            return Ok(response);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            const string errorMessage = "Failed to retrieve scenarios.";
+            _logger.LogError(exception, "{ErrorMessage}", errorMessage);
+            return InternalServerError(errorMessage);
+        }
     }
 
-    /// <summary>
-    /// Get a scenario by ID
-    /// </summary>
-    [HttpGet("{scenarioId}")]
+    [HttpGet("{scenarioId:guid}")]
     [ProducesResponseType(typeof(ScenarioDetailsDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ScenarioDetailsDto>> GetScenarioById(Guid scenarioId)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ScenarioDetailsDto>> GetScenarioById(Guid scenarioId, CancellationToken cancellationToken)
     {
-        return null;
+        try
+        {
+            var scenario = await _scenarioService.GetByIdAsync(scenarioId, cancellationToken);
+            if (scenario is null)
+                return NotFound(new ErrorResponse { Message = $"Scenario with ID '{scenarioId}' was not found." });
+
+            return Ok(_mapper.Map<ScenarioDetailsDto>(scenario));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            const string errorMessage = "Failed to retrieve scenario.";
+            _logger.LogError(exception, "{ErrorMessage} Scenario ID: {ScenarioId}", errorMessage, scenarioId);
+            return InternalServerError(errorMessage);
+        }
     }
 
-    /// <summary>
-    /// Create a new scenario
-    /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(ScenarioDetailsDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ScenarioDetailsDto>> CreateScenario([FromBody] CreateScenarioRequest request)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ScenarioDetailsDto>> CreateScenario(
+        [FromBody] CreateScenarioRequest request,
+        CancellationToken cancellationToken)
     {
-        return null;
+        try
+        {
+            var scenario = await _scenarioService.CreateAsync(request.Name, request.Description, cancellationToken);
+            var response = _mapper.Map<ScenarioDetailsDto>(scenario);
+
+            _logger.LogInformation(
+                "Scenario {ScenarioId} was created with name {ScenarioName}",
+                scenario.Id,
+                scenario.Name);
+
+            return CreatedAtAction(nameof(GetScenarioById), new { scenarioId = response.Id }, response);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            const string errorMessage = "Failed to create scenario.";
+            _logger.LogError(exception, "{ErrorMessage}", errorMessage);
+            return InternalServerError(errorMessage);
+        }
+    }
+
+    private ObjectResult InternalServerError(string message)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse { Message = message });
     }
 }

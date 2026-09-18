@@ -2,11 +2,17 @@ using Backend.Domain.Models;
 
 namespace Backend.Infrastructure.Interfaces;
 
-/// <summary>
-/// Repository interface for Entity data access
-/// </summary>
 public interface IEntityRepository : IRepository<Entity>
 {
-    Task<IEnumerable<Entity>> GetByScenarioIdAsync(Guid scenarioId);
-    Task<bool> ScenarioExistsAsync(Guid scenarioId);
+    Task<Entity?> AddToScenarioAsync(
+        Entity entity,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyCollection<Entity>> GetByScenarioIdAsync(
+        Guid scenarioId,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyDictionary<Guid, int>> GetCountsByScenarioIdsAsync(
+        IEnumerable<Guid> scenarioIds,
+        CancellationToken cancellationToken);
 }
