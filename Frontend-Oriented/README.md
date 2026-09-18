@@ -89,7 +89,7 @@ The frontend runs at http://localhost:4200 and uses the API URL configured in `f
 ## Implemented
 
 - Scenario list, creation, details, searching, sorting, and paging
-- Entity creation, filtering, searching, sorting, and paging
+- Entity creation, filtering, searching, sorting, paging, and table/map views
 - Frontend and backend validation
 - Loading, empty, and error states
 - Material toast notifications for create operations
@@ -100,6 +100,6 @@ The frontend runs at http://localhost:4200 and uses the API URL configured in `f
 
 ## Trade-offs
 
-- The map view, update/delete operations, and global search are not implemented.
+- Update/delete operations and global search are not implemented.
 - The production frontend API URL is configured at build time through `frontend/frontend-angular/src/environments/environment.prod.ts`.
 - The Docker Compose setup is intended for local single-instance use. Production deployment requires separate database roles, secret management, coordinated migrations, health checks, and backups.

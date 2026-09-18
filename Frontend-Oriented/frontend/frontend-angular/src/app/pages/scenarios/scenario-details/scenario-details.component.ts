@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, finalize, forkJoin, Subject } from 'rxjs';
 import { EmptyStateComponent } from '../../../common/components/empty-state/empty-state.component';
@@ -10,12 +11,14 @@ import { LoadingStateComponent } from '../../../common/components/loading-state/
 import { IApiError } from '../../../common/types/IApiError';
 import { EntityFiltersComponent } from '../../entities/entity-list/components/entity-filters/entity-filters.component';
 import { EntityTableComponent } from '../../entities/entity-list/components/entity-table/entity-table.component';
+import { EntityMapComponent } from '../../entities/entity-list/components/entity-map/entity-map.component';
 import { EntityListService } from '../../entities/entity-list/services/entity-list.service';
 import { ScenarioHeaderComponent } from './components/scenario-header/scenario-header.component';
 import { ScenarioDetailsService } from './services/scenario-details.service';
 import { IEntity } from '../../entities/entity-list/types/IEntity';
 import { IEntityListQuery } from '../../entities/entity-list/types/IEntityListQuery';
 import { EEntitySortOption } from '../../entities/entity-list/types/EEntitySortOption';
+import { EEntityViewMode } from '../../entities/entity-list/types/EEntityViewMode';
 import { IScenarioDetails } from './types/IScenarioDetails';
 
 const ENTITY_SORT_QUERIES: Record<
@@ -34,12 +37,14 @@ const ENTITY_SORT_QUERIES: Record<
   imports: [
     RouterLink,
     MatButtonModule,
+    MatButtonToggleModule,
     MatPaginatorModule,
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingStateComponent,
     EntityFiltersComponent,
     EntityTableComponent,
+    EntityMapComponent,
     ScenarioHeaderComponent,
   ],
   providers: [ScenarioDetailsService, EntityListService],
@@ -64,6 +69,8 @@ export class ScenarioDetailsComponent {
   readonly page = signal(1);
   readonly pageSize = signal(20);
   readonly totalCount = signal(0);
+  readonly viewMode = signal(EEntityViewMode.Table);
+  readonly viewModes = EEntityViewMode;
 
   constructor() {
     this.searchChanges

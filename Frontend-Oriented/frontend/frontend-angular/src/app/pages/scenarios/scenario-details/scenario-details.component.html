@@ -30,7 +30,19 @@
     @if (entities().length === 0) {
       <app-empty-state title="No matching entities" message="Try changing the active filters." />
     } @else {
-      <app-entity-table [entities]="entities()" />
+      <mat-button-toggle-group
+        aria-label="Entity view"
+        [value]="viewMode()"
+        (change)="viewMode.set($event.value)"
+      >
+        <mat-button-toggle [value]="viewModes.Table">Table</mat-button-toggle>
+        <mat-button-toggle [value]="viewModes.Map">Map</mat-button-toggle>
+      </mat-button-toggle-group>
+      @if (viewMode() === viewModes.Table) {
+        <app-entity-table [entities]="entities()" />
+      } @else {
+        <app-entity-map [entities]="entities()" />
+      }
       <mat-paginator
         [length]="totalCount()"
         [pageIndex]="page() - 1"
