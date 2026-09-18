@@ -7,6 +7,7 @@ This is the ASP.NET Core 8 API for the Scenario Builder application. It uses Ent
 **Prerequisites:**
    - .NET 8.0 SDK or later
    - PostgreSQL 16 or a compatible PostgreSQL server
+   - `dotnet-ef` tool when creating or inspecting migrations
    - Your preferred IDE (Visual Studio, Rider, VS Code)
 
 The API will be available at:
@@ -47,16 +48,16 @@ backend/
 ## API Endpoints
 
 ### Scenarios
-- `GET /api/scenarios` - Get all scenarios
+- `GET /api/scenarios` - Get a paged, searchable, and sortable scenario list
 - `GET /api/scenarios/{scenarioId}` - Get scenario by ID
 - `POST /api/scenarios` - Create a new scenario
 
 ### Entities
-- `GET /api/scenarios/{scenarioId}/entities` - Get all entities for a scenario
+- `GET /api/scenarios/{scenarioId}/entities` - Get a paged, searchable, filterable, and sortable entity list for a scenario
 - `GET /api/entities/{entityId}` - Get entity by ID
 - `POST /api/scenarios/{scenarioId}/entities` - Create a new entity
 
-**Note:** Update and Delete operations have been removed from the skeleton. The application supports Create and Read operations only. Update and Delete operations are Bonus
+**Note:** The application supports Create and Read operations only. Update and Delete operations are bonus functionality and are not implemented.
 
 ## What's Implemented
 
@@ -67,7 +68,7 @@ backend/
 - ✅ PostgreSQL persistence and referential integrity
 - ✅ EF Core migrations applied during application startup
 - ✅ Server-side paging, filtering, and sorting
-- ✅ **DTO validation attributes** — `[Required]`, `[Range]`, `[MaxLength]`, `[EnumDataType]` on all request DTOs
+- ✅ **DTO validation attributes** — request DTOs use the relevant `[Required]`, `[Range]`, `[MaxLength]`, and `[EnumDataType]` constraints
 - ✅ **Automatic 400 responses** — invalid requests return `ErrorResponse` with field-level errors (no extra code needed)
 - ✅ **Enum string deserialization** — frontend can send `"Soldier"`, `"Friendly"` etc. as strings
 - ✅ Error response shape (ErrorResponse)
@@ -77,6 +78,14 @@ backend/
 ## Database
 
 The development connection string is configured in `Backend.Api/appsettings.Development.json`. Docker overrides it through `ConnectionStrings__DefaultConnection`.
+
+For local execution, create the configured database and role in PostgreSQL before starting the API. The default development connection expects PostgreSQL on `localhost:5432`, database `scenario_builder`, user `postgres`, and password `postgres`. These credentials are intended for local development only.
+
+Install the EF Core CLI when it is not already available:
+
+```bash
+dotnet tool install --global dotnet-ef --version 8.*
+```
 
 Create a new migration with:
 
@@ -90,4 +99,4 @@ dotnet ef migrations add <MigrationName> \
 
 - Entities must always belong to a Scenario (no orphan entities)
 - Validate that a scenario exists before creating an entity under it (return `404` if it doesn't)
-- The connection between HTTP status codes, DTO validation, and error responses is already wired — focus on the controller logic
+- Invalid request DTOs return a standardized `400` response with field-level validation errors

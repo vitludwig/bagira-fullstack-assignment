@@ -16,6 +16,14 @@ From the `Frontend-Oriented` directory run:
 docker compose up --build
 ```
 
+The first run builds the images, initializes PostgreSQL, and applies pending EF Core migrations. For subsequent runs without source or dependency changes, use:
+
+```bash
+docker compose up
+```
+
+Run `docker compose up --build` again after changing application source code, dependencies, or a Dockerfile.
+
 Open:
 
 - Frontend: http://localhost:4200
@@ -48,13 +56,15 @@ The following environment variables can be placed in a `.env` file next to `dock
 
 Copy `.env.example` to `.env` to customize the values.
 
-The frontend API URL is configured at build time in `src/environments/environment.prod.ts`. Change the default database password in `.env` outside local development.
+`POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` initialize PostgreSQL only when the database volume is created for the first time. Changing them later does not update the existing database. For disposable local data, remove the volume with `docker compose down --volumes` before starting again with new values.
+
+The frontend API URL is configured at build time in `frontend/frontend-angular/src/environments/environment.prod.ts`. The included Compose configuration and credentials are intended for local development only, not for production deployment.
 
 ## Run locally without Docker
 
 ### Backend
 
-The local backend requires PostgreSQL on `localhost:5432` with the database and credentials configured in `backend/Backend.Api/appsettings.Development.json`. EF Core applies pending migrations when the API starts.
+The local backend requires PostgreSQL on `localhost:5432`. Create the database and user referenced by `backend/Backend.Api/appsettings.Development.json`, or replace that development connection string with your local credentials. The default configuration expects database `scenario_builder` and user `postgres` with password `postgres`. EF Core applies pending migrations when the API starts.
 
 ```bash
 cd backend
@@ -74,7 +84,7 @@ npm ci
 npm start
 ```
 
-The frontend runs at http://localhost:4200 and uses the API URL configured in `src/environments/environment.ts`.
+The frontend runs at http://localhost:4200 and uses the API URL configured in `frontend/frontend-angular/src/environments/environment.ts`.
 
 ## Implemented
 
@@ -91,4 +101,5 @@ The frontend runs at http://localhost:4200 and uses the API URL configured in `s
 ## Trade-offs
 
 - The map view, update/delete operations, and global search are not implemented.
-- The production frontend API URL is configured at build time through the Angular environment file.
+- The production frontend API URL is configured at build time through `frontend/frontend-angular/src/environments/environment.prod.ts`.
+- The Docker Compose setup is intended for local single-instance use. Production deployment requires separate database roles, secret management, coordinated migrations, health checks, and backups.
