@@ -1,0 +1,32 @@
+<table mat-table [dataSource]="scenarios()">
+  <ng-container matColumnDef="name"
+    ><th mat-header-cell *matHeaderCellDef>Scenario</th>
+    <td mat-cell *matCellDef="let item">
+      <a matButton [routerLink]="['/scenarios', item.id]">{{ item.name }}</a>
+    </td></ng-container
+  >
+  <ng-container matColumnDef="description"
+    ><th mat-header-cell *matHeaderCellDef>Description</th>
+    <td mat-cell *matCellDef="let item">
+      {{ item.description || 'No description' }}
+    </td></ng-container
+  >
+  <ng-container matColumnDef="entities"
+    ><th mat-header-cell *matHeaderCellDef>Entities</th>
+    <td mat-cell *matCellDef="let item">{{ item.entityCount ?? 0 }}</td></ng-container
+  >
+  <ng-container matColumnDef="updated"
+    ><th mat-header-cell *matHeaderCellDef>Updated</th>
+    <td mat-cell *matCellDef="let item">
+      {{ item.updatedAt ? (item.updatedAt | date: 'mediumDate') : '—' }}
+    </td></ng-container
+  >
+  <ng-container matColumnDef="action"
+    ><th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let item">
+      <a matButton [routerLink]="['/scenarios', item.id]">Open</a>
+    </td></ng-container
+  >
+  <tr mat-header-row *matHeaderRowDef="columns"></tr>
+  <tr mat-row *matRowDef="let row; columns: columns"></tr>
+</table>

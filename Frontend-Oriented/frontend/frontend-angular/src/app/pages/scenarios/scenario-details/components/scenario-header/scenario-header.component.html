@@ -1,0 +1,14 @@
+<a matButton routerLink="/scenarios">← Back to scenarios</a>
+<section class="header">
+  <div>
+    <p>Scenario</p>
+    <h1>{{ scenario().name }}</h1>
+    <p class="description">{{ scenario().description || 'No description provided.' }}</p>
+    @if (scenario().updatedAt) {
+      <small class="updated">Last updated {{ scenario().updatedAt | date: 'medium' }}</small>
+    }
+  </div>
+  <a matButton="filled" [routerLink]="['/scenarios', scenario().id, 'entities', 'create']"
+    >Create entity</a
+  >
+</section>

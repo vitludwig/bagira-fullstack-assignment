@@ -1,0 +1,22 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+mat-toolbar {
+  gap: 1rem;
+}
+
+nav {
+  margin-left: auto;
+}
+
+main {
+  width: min(100% - 2rem, 75rem);
+  margin-inline: auto;
+  padding-block: 2rem;
+}
+.primary-toolbar {
+  background-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+}

@@ -18,4 +18,5 @@ public interface IEntityService
         double latitude,
         double longitude,
         CancellationToken cancellationToken);
+
 }

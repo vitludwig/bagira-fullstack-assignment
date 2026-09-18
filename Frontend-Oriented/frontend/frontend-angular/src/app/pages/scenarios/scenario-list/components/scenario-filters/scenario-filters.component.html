@@ -1,0 +1,18 @@
+<mat-form-field>
+  <mat-label>Search scenarios</mat-label>
+  <input
+    matInput
+    type="search"
+    [value]="query()"
+    (input)="queryChange.emit($any($event.target).value)"
+  />
+</mat-form-field>
+<mat-form-field>
+  <mat-label>Sort scenarios</mat-label>
+  <mat-select [value]="sort()" (selectionChange)="sortChange.emit($event.value)">
+    <mat-option value="updated-desc">Recently updated</mat-option>
+    <mat-option value="name-asc">Name A–Z</mat-option>
+    <mat-option value="name-desc">Name Z–A</mat-option>
+    <mat-option value="entities-desc">Most entities</mat-option>
+  </mat-select>
+</mat-form-field>

@@ -1,0 +1,32 @@
+<section class="page-heading">
+  <div>
+    <h1>Scenarios</h1>
+    <p>Create and manage training scenarios and their entities.</p>
+  </div>
+  <a matButton="filled" routerLink="/scenarios/create">Create scenario</a>
+</section>
+
+@if (loading()) {
+  <app-loading-state />
+} @else if (error()) {
+  <app-error-state [message]="error()!" (retry)="load()" />
+} @else if (scenarios().length === 0) {
+  <app-empty-state
+    title="No scenarios yet"
+    message="Create your first training scenario to get started."
+  >
+    <a matButton="filled" routerLink="/scenarios/create">Create scenario</a>
+  </app-empty-state>
+} @else {
+  <app-scenario-filters
+    [query]="query()"
+    [sort]="sort()"
+    (queryChange)="query.set($event)"
+    (sortChange)="sort.set($event)"
+  />
+  @if (visibleScenarios().length === 0) {
+    <app-empty-state title="No matching scenarios" message="Try a different search term." />
+  } @else {
+    <app-scenario-table [scenarios]="visibleScenarios()" />
+  }
+}

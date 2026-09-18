@@ -54,4 +54,5 @@ public class EntityService : IEntityService
 
         return _entityRepository.AddToScenarioAsync(entity, cancellationToken);
     }
+
 }

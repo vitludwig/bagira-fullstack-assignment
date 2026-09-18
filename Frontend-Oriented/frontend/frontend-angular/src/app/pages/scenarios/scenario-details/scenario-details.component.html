@@ -1,0 +1,36 @@
+@if (loading()) {
+  <app-loading-state />
+} @else if (error()) {
+  <app-error-state [message]="error()!" (retry)="load()" />
+} @else if (scenario(); as currentScenario) {
+  <app-scenario-header [scenario]="currentScenario" />
+  <section class="entities-heading">
+    <div>
+      <h2 class="mat-headline-medium">Entities</h2>
+      <p>{{ entities().length }} total</p>
+    </div>
+  </section>
+  @if (entities().length === 0) {
+    <app-empty-state title="No entities yet" message="Add the first entity to this scenario.">
+      <a matButton="filled" [routerLink]="['/scenarios', scenarioId, 'entities', 'create']"
+        >Create entity</a
+      >
+    </app-empty-state>
+  } @else {
+    <app-entity-filters
+      [query]="query()"
+      [type]="type()"
+      [taskForce]="taskForce()"
+      [sort]="sort()"
+      (queryChange)="query.set($event)"
+      (typeChange)="type.set($event)"
+      (taskForceChange)="taskForce.set($event)"
+      (sortChange)="sort.set($event)"
+    />
+    @if (visibleEntities().length === 0) {
+      <app-empty-state title="No matching entities" message="Try changing the active filters." />
+    } @else {
+      <app-entity-table [entities]="visibleEntities()" />
+    }
+  }
+}

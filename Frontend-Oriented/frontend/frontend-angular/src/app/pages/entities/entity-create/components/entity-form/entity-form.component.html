@@ -1,0 +1,63 @@
+<mat-card
+  ><mat-card-content
+    ><form [formGroup]="form" (ngSubmit)="submit()">
+      @if (serverError()) {
+        <mat-error>{{ serverError() }}</mat-error>
+      }
+      <mat-form-field
+        ><mat-label>Entity type</mat-label
+        ><mat-select formControlName="type">
+          @for (item of entityTypes; track item) {
+            <mat-option [value]="item">{{ item }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.type.hasError('required')) {
+          <mat-error>Entity type is required.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field
+        ><mat-label>Task force</mat-label
+        ><mat-select formControlName="taskForce">
+          @for (item of taskForces; track item) {
+            <mat-option [value]="item">{{ item }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.taskForce.hasError('required')) {
+          <mat-error>Task force is required.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field
+        ><mat-label>Name / callsign</mat-label
+        ><input matInput formControlName="name" maxlength="200" />
+        @if (form.controls.name.hasError('required')) {
+          <mat-error>Name is required.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field
+        ><mat-label>Latitude</mat-label><input matInput type="number" formControlName="latitude" />
+        @if (form.controls.latitude.invalid) {
+          <mat-error>Latitude must be between -90 and 90.</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field
+        ><mat-label>Longitude</mat-label
+        ><input matInput type="number" formControlName="longitude" />
+        @if (form.controls.longitude.invalid) {
+          <mat-error>Longitude must be between -180 and 180.</mat-error>
+        }
+      </mat-form-field>
+      <mat-card-actions align="end"
+        ><button
+          matButton="outlined"
+          type="button"
+          [disabled]="submitting()"
+          (click)="cancelled.emit()"
+        >
+          Cancel</button
+        ><button matButton="filled" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Creating…' : 'Create entity' }}
+        </button></mat-card-actions
+      >
+    </form></mat-card-content
+  ></mat-card
+>

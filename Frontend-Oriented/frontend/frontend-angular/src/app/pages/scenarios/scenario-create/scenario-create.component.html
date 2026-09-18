@@ -1,0 +1,11 @@
+<a matButton routerLink="/scenarios">← Back to scenarios</a>
+<section class="heading">
+  <h1>Create scenario</h1>
+</section>
+
+<app-scenario-form
+  [submitting]="submitting()"
+  [serverError]="error()"
+  (submitted)="create($event)"
+  (cancelled)="router.navigate(['/scenarios'])"
+/>

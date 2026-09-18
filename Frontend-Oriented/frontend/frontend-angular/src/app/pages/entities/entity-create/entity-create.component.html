@@ -1,0 +1,13 @@
+<a matButton [routerLink]="['/scenarios', scenarioId]">← Back to scenario</a>
+
+<section class="heading">
+  <h1>Create entity</h1>
+  <p>Add an entity to the selected training scenario.</p>
+</section>
+
+<app-entity-form
+  [submitting]="submitting()"
+  [serverError]="error()"
+  (submitted)="create($event)"
+  (cancelled)="router.navigate(['/scenarios', scenarioId])"
+/>

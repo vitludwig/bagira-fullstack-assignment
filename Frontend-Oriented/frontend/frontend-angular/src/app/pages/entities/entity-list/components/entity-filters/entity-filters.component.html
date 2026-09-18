@@ -1,0 +1,35 @@
+<mat-form-field
+  ><mat-label>Search entities</mat-label
+  ><input
+    matInput
+    type="search"
+    [value]="query()"
+    (input)="queryChange.emit($any($event.target).value)"
+/></mat-form-field>
+<mat-form-field
+  ><mat-label>Entity type</mat-label
+  ><mat-select [value]="type()" (selectionChange)="typeChange.emit($event.value)"
+    ><mat-option value="">All types</mat-option>
+    @for (item of entityTypes; track item) {
+      <mat-option [value]="item">{{ item }}</mat-option>
+    }
+  </mat-select></mat-form-field
+>
+<mat-form-field
+  ><mat-label>Task force</mat-label
+  ><mat-select [value]="taskForce()" (selectionChange)="taskForceChange.emit($event.value)"
+    ><mat-option value="">All forces</mat-option>
+    @for (item of taskForces; track item) {
+      <mat-option [value]="item">{{ item }}</mat-option>
+    }
+  </mat-select></mat-form-field
+>
+<mat-form-field
+  ><mat-label>Sort entities</mat-label
+  ><mat-select [value]="sort()" (selectionChange)="sortChange.emit($event.value)"
+    ><mat-option value="name-asc">Name A–Z</mat-option
+    ><mat-option value="name-desc">Name Z–A</mat-option
+    ><mat-option value="type-asc">Type</mat-option
+    ><mat-option value="force-asc">Task force</mat-option></mat-select
+  ></mat-form-field
+>
