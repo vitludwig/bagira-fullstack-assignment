@@ -86,6 +86,20 @@ npm start
 
 The frontend runs at http://localhost:4200 and uses the API URL configured in `frontend/frontend-angular/src/environments/environment.ts`.
 
+### Frontend UI tests
+
+Playwright UI tests start the Angular development server on port `4201` and mock the API responses, so PostgreSQL and the backend are not required.
+
+Install the Chromium browser once and run the tests:
+
+```bash
+cd frontend/frontend-angular
+npx playwright install chromium
+npm run test:e2e
+```
+
+Use `npm run test:e2e:ui` for Playwright's interactive test runner.
+
 ## Implemented
 
 - Scenario list, creation, details, searching, sorting, and paging
@@ -97,6 +111,7 @@ The frontend runs at http://localhost:4200 and uses the API URL configured in `f
 - CORS configuration
 - Multi-stage Docker builds for backend and frontend
 - PostgreSQL persistence with EF Core migrations
+- Playwright UI tests for the primary frontend workflows
 
 ## Trade-offs
 

@@ -1,32 +1,44 @@
-# Frontend — Angular
+# Scenario Builder Frontend
 
-This is the Angular starter skeleton for the Frontend-Oriented assignment.
+Angular 21 frontend for managing training scenarios and their entities. The UI uses Angular Material and provides scenario and entity creation, server-side search, filtering, sorting, pagination, and table/map entity views.
 
-## Getting started
+## Development
+
+Install dependencies and start the development server:
 
 ```bash
-npm install
-ng serve
+npm ci
+npm start
 ```
 
-The app runs on `http://localhost:4200` by default.
+The application runs at http://localhost:4200 and expects the API URL configured in `src/environments/environment.ts`.
 
-## Environment variables
+Create a production build with:
 
-The API base URL is configured in `src/environments/environment.ts`:
-
-```ts
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:5000'
-};
+```bash
+npm run build
 ```
 
-Update `apiUrl` if your backend runs on a different port.
+## UI tests
 
-## What to implement
+The Playwright tests start a separate Angular development server on http://127.0.0.1:4201 and mock API responses. The backend and PostgreSQL are not required.
 
-Build the full frontend application from here. See the assignment document for requirements.
+Install the Chromium browser once:
 
-Routing is configured in `src/app/app.routes.ts` — add your routes and components from there.
-`HttpClient` is pre-configured in `app.config.ts` via `provideHttpClient()`.
+```bash
+npx playwright install chromium
+```
+
+Run the headless UI tests:
+
+```bash
+npm run test:e2e
+```
+
+Run Playwright's interactive UI:
+
+```bash
+npm run test:e2e:ui
+```
+
+Test reports and artifacts are generated in `playwright-report` and `test-results` and are ignored by Git.
