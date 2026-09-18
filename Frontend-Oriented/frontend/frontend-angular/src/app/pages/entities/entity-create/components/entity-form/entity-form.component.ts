@@ -77,4 +77,3 @@ function isICreateEntityRequest(
     value.longitude !== null
   );
 }
-

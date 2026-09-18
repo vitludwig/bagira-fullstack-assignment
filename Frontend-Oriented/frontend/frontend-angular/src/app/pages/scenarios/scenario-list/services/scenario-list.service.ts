@@ -17,6 +17,8 @@ export class ScenarioListService {
       .set('search', query.search)
       .set('sortBy', query.sortBy)
       .set('sortDirection', query.sortDirection);
-    return this.http.get<IPagedResponse<IScenarioListItem>>(`${environment.apiUrl}/api/scenarios`, { params });
+    return this.http.get<IPagedResponse<IScenarioListItem>>(`${environment.apiUrl}/api/scenarios`, {
+      params,
+    });
   }
 }
