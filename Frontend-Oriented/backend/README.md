@@ -1,11 +1,12 @@
 # Scenario Builder - Backend API
 
-This is the backend for the Scenario Builder application built with ASP.NET Web API. It provides domain models, repositories, DTOs with validation, and controller stubs. Your task is to implement the controller logic and configure CORS.
+This is the ASP.NET Core 8 API for the Scenario Builder application. It uses Entity Framework Core with PostgreSQL, Mapster for DTO mapping, and Gridify for server-side paging, filtering, and sorting.
 
 ## Setup
 
 **Prerequisites:**
    - .NET 8.0 SDK or later
+   - PostgreSQL 16 or a compatible PostgreSQL server
    - Your preferred IDE (Visual Studio, Rider, VS Code)
 
 The API will be available at:
@@ -31,12 +32,14 @@ backend/
 │       ├── Entity.cs
 │       ├── EntityType.cs
 │       └── TaskForce.cs
-└── Backend.Infrastructure/  # Infrastructure layer
+└── Backend.Infrastructure/  # Persistence layer
+    ├── Data/                # EF Core context and entity configurations
     ├── Interfaces/          # Repository interfaces
     │   ├── IRepository.cs
     │   ├── IScenarioRepository.cs
     │   └── IEntityRepository.cs
-    └── Repositories/        # Repository implementations (in-memory)
+    ├── Migrations/          # EF Core migrations
+    └── Repositories/        # PostgreSQL repository implementations
         ├── ScenarioRepository.cs
         └── EntityRepository.cs
 ```
@@ -57,11 +60,13 @@ backend/
 
 ## What's Implemented
 
-- ✅ Complete API controller structure with Create and Read endpoint stubs
+- ✅ Create and Read API controllers
 - ✅ DTOs for all requests and responses
 - ✅ Domain models (Scenario, Entity) with enums (EntityType, TaskForce)
-- ✅ Repository interfaces (IRepository, IScenarioRepository, IEntityRepository)
-- ✅ In-memory repository implementations (ScenarioRepository and EntityRepository)
+- ✅ Repository interfaces and EF Core implementations
+- ✅ PostgreSQL persistence and referential integrity
+- ✅ EF Core migrations applied during application startup
+- ✅ Server-side paging, filtering, and sorting
 - ✅ **DTO validation attributes** — `[Required]`, `[Range]`, `[MaxLength]`, `[EnumDataType]` on all request DTOs
 - ✅ **Automatic 400 responses** — invalid requests return `ErrorResponse` with field-level errors (no extra code needed)
 - ✅ **Enum string deserialization** — frontend can send `"Soldier"`, `"Friendly"` etc. as strings
@@ -69,11 +74,17 @@ backend/
 - ✅ Swagger/OpenAPI configuration
 - ✅ Dependency injection setup for repositories
 
-## What Needs to be Implemented
+## Database
 
-1. **API Controllers** — implement the endpoint stubs in `ScenariosController` and `EntitiesController` (look for `return null;`)
-2. **Error Handling** — return `404 NotFound` (with an `ErrorResponse` body) when a scenario or entity is not found
-3. **CORS** — configure CORS in `Program.cs` (look for the `TODO` comment) to allow requests from your frontend origin
+The development connection string is configured in `Backend.Api/appsettings.Development.json`. Docker overrides it through `ConnectionStrings__DefaultConnection`.
+
+Create a new migration with:
+
+```bash
+dotnet ef migrations add <MigrationName> \
+  --project Backend.Infrastructure \
+  --startup-project Backend.Api
+```
 
 ## Key Requirements
 

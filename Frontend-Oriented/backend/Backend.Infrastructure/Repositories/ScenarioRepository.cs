@@ -1,61 +1,57 @@
-using System.Collections.Concurrent;
 using Backend.Domain.Models;
+using Backend.Infrastructure.Data;
 using Backend.Infrastructure.Interfaces;
 using Backend.Infrastructure.Models;
 using Gridify;
+using Gridify.EntityFramework;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Repositories;
 
-public class ScenarioRepository : IScenarioRepository
+public class ScenarioRepository(BackendDbContext dbContext) : IScenarioRepository
 {
     private static readonly IGridifyMapper<ScenarioListRecord> GridMapper = new GridifyMapper<ScenarioListRecord>()
+        .AddMap("id", record => record.Scenario.Id)
         .AddMap("name", record => record.Scenario.Name)
         .AddMap("description", record => record.Scenario.Description!)
         .AddMap("updatedAt", record => record.Scenario.UpdatedAt)
         .AddMap("entityCount", record => record.EntityCount);
-    internal static readonly object StoreLock = new();
-    internal static readonly ConcurrentDictionary<Guid, Scenario> Store = new();
 
-    public Task<PagedResult<ScenarioListRecord>> GetAllAsync(
+    public async Task<PagedResult<ScenarioListRecord>> GetAllAsync(
         GridRequest request,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var entityCounts = EntityRepository.Store.Values
-            .GroupBy(entity => entity.ScenarioId)
-            .ToDictionary(group => group.Key, group => group.Count());
-        var source = Store.Values
+        var source = dbContext.Scenarios
+            .AsNoTracking()
             .Select(scenario => new ScenarioListRecord
             {
                 Scenario = scenario,
-                EntityCount = entityCounts.GetValueOrDefault(scenario.Id)
-            })
-            .AsQueryable();
-        var result = source.Gridify(new GridifyQuery
+                EntityCount = dbContext.Entities.Count(entity => entity.ScenarioId == scenario.Id)
+            });
+        var result = await source.GridifyAsync(new GridifyQuery
         {
             Page = request.Page,
             PageSize = request.PageSize,
             Filter = request.Filter,
-            OrderBy = request.OrderBy
-        }, GridMapper);
+            OrderBy = $"{request.OrderBy},id asc"
+        }, cancellationToken, GridMapper);
 
-        return Task.FromResult(new PagedResult<ScenarioListRecord>
+        return new PagedResult<ScenarioListRecord>
         {
             Items = result.Data.ToList(),
             TotalCount = result.Count
-        });
+        };
     }
 
     public Task<Scenario?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        Store.TryGetValue(id, out var scenario);
-        return Task.FromResult(scenario);
+        return dbContext.Scenarios
+            .AsNoTracking()
+            .SingleOrDefaultAsync(scenario => scenario.Id == id, cancellationToken);
     }
 
-    public Task<Scenario> AddAsync(Scenario scenario, CancellationToken cancellationToken)
+    public async Task<Scenario> AddAsync(Scenario scenario, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
         if (scenario.Id == Guid.Empty)
             scenario.Id = Guid.NewGuid();
 
@@ -63,7 +59,8 @@ public class ScenarioRepository : IScenarioRepository
         scenario.CreatedAt = now;
         scenario.UpdatedAt = now;
 
-        Store[scenario.Id] = scenario;
-        return Task.FromResult(scenario);
+        dbContext.Scenarios.Add(scenario);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return scenario;
     }
 }

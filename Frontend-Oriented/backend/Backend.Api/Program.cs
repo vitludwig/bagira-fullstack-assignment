@@ -4,11 +4,13 @@ using Backend.Api.Mappings;
 using Backend.Api.Services;
 using Backend.Api.Services.Interfaces;
 using Backend.Infrastructure.Interfaces;
+using Backend.Infrastructure.Data;
 using Backend.Infrastructure.Repositories;
 using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,12 +68,32 @@ builder.Services.AddCors(options =>
     });
 });
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+builder.Services.AddDbContext<BackendDbContext>(options =>
+    options.UseNpgsql(connectionString, npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
+
 builder.Services.AddScoped<IScenarioRepository, ScenarioRepository>();
 builder.Services.AddScoped<IEntityRepository, EntityRepository>();
 builder.Services.AddScoped<IScenarioService, ScenarioService>();
 builder.Services.AddScoped<IEntityService, EntityService>();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseMigration");
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<BackendDbContext>();
+        await dbContext.Database.MigrateAsync();
+    }
+    catch (Exception exception)
+    {
+        logger.LogCritical(exception, "Failed to apply database migrations");
+        throw;
+    }
+}
 
 app.UseExceptionHandler(exceptionHandler =>
 {

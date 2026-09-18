@@ -1,12 +1,32 @@
 services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-scenario_builder}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=database;Port=5432;Database=${POSTGRES_DB:-scenario_builder};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       FrontendOrigin: http://localhost:${FRONTEND_PORT:-4200}
       UseHttpsRedirection: false
+    depends_on:
+      database:
+        condition: service_healthy
     ports:
       - "5000:8080"
     restart: unless-stopped
@@ -20,3 +40,6 @@ services:
     ports:
       - "${FRONTEND_PORT:-4200}:80"
     restart: unless-stopped
+
+volumes:
+  postgres_data:

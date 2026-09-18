@@ -1,56 +1,55 @@
-using System.Collections.Concurrent;
 using Backend.Domain.Models;
+using Backend.Infrastructure.Data;
 using Backend.Infrastructure.Interfaces;
 using Backend.Infrastructure.Models;
 using Gridify;
+using Gridify.EntityFramework;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Repositories;
 
-public class EntityRepository : IEntityRepository
+public class EntityRepository(BackendDbContext dbContext) : IEntityRepository
 {
     private static readonly IGridifyMapper<Entity> GridMapper = new GridifyMapper<Entity>()
+        .AddMap("id", entity => entity.Id)
         .AddMap("name", entity => entity.Name)
         .AddMap("type", entity => entity.Type)
         .AddMap("taskForce", entity => entity.TaskForce)
         .AddMap("latitude", entity => entity.Latitude)
         .AddMap("longitude", entity => entity.Longitude)
         .AddMap("updatedAt", entity => entity.UpdatedAt);
-    internal static readonly ConcurrentDictionary<Guid, Entity> Store = new();
-
-    public Task<PagedResult<Entity>> GetByScenarioIdAsync(
+    public async Task<PagedResult<Entity>> GetByScenarioIdAsync(
         Guid scenarioId,
         GridRequest request,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var result = Store.Values
+        var result = await dbContext.Entities
+            .AsNoTracking()
             .Where(entity => entity.ScenarioId == scenarioId)
-            .AsQueryable()
-            .Gridify(new GridifyQuery
+            .GridifyAsync(new GridifyQuery
             {
                 Page = request.Page,
                 PageSize = request.PageSize,
                 Filter = request.Filter,
-                OrderBy = request.OrderBy
-            }, GridMapper);
+                OrderBy = $"{request.OrderBy},id asc"
+            }, cancellationToken, GridMapper);
 
-        return Task.FromResult(new PagedResult<Entity>
+        return new PagedResult<Entity>
         {
             Items = result.Data.ToList(),
             TotalCount = result.Count
-        });
+        };
     }
 
     public Task<Entity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        Store.TryGetValue(id, out var entity);
-        return Task.FromResult(entity);
+        return dbContext.Entities
+            .AsNoTracking()
+            .SingleOrDefaultAsync(entity => entity.Id == id, cancellationToken);
     }
 
-    public Task<Entity> AddAsync(Entity entity, CancellationToken cancellationToken)
+    public async Task<Entity> AddAsync(Entity entity, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
         if (entity.Id == Guid.Empty)
             entity.Id = Guid.NewGuid();
 
@@ -58,31 +57,21 @@ public class EntityRepository : IEntityRepository
         entity.CreatedAt = now;
         entity.UpdatedAt = now;
 
-        Store[entity.Id] = entity;
-        return Task.FromResult(entity);
+        dbContext.Entities.Add(entity);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return entity;
     }
 
-    public Task<Entity?> AddToScenarioAsync(
+    public async Task<Entity?> AddToScenarioAsync(
         Entity entity,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        if (!await dbContext.Scenarios.AnyAsync(
+                scenario => scenario.Id == entity.ScenarioId,
+                cancellationToken))
+            return null;
 
-        lock (ScenarioRepository.StoreLock)
-        {
-            if (!ScenarioRepository.Store.ContainsKey(entity.ScenarioId))
-                return Task.FromResult<Entity?>(null);
-
-            if (entity.Id == Guid.Empty)
-                entity.Id = Guid.NewGuid();
-
-            var now = DateTime.UtcNow;
-            entity.CreatedAt = now;
-            entity.UpdatedAt = now;
-
-            Store[entity.Id] = entity;
-            return Task.FromResult<Entity?>(entity);
-        }
+        return await AddAsync(entity, cancellationToken);
     }
 
 }
